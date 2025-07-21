@@ -117,6 +117,7 @@ public class QueryChainUtil<T> {
         return list.isEmpty() ? null : list.getFirst();
     }
 
+
     private String buildSql() {
         if (table == null) {
             throw new IllegalStateException("你TM表呢!!!");
@@ -142,6 +143,24 @@ public class QueryChainUtil<T> {
         }
         log.info("sql:{}", sb);
         return sb.toString();
+    }
+
+    /**
+     * 返回符合条件的记录数
+     */
+    public long count() {
+        if (table == null) {
+            throw new IllegalStateException("你TM表呢!!!");
+        }
+        StringBuilder sb = new StringBuilder("SELECT COUNT(*) FROM ").append(table);
+        if (!whereSql.isEmpty()) {
+            sb.append(" WHERE ").append(whereSql);
+        }
+        String a = sb.toString();
+        log.info("count sql:{}", a);
+        Object[] arr = params.toArray();
+        Long result = jdbc.query(a, rs -> rs.next() ? rs.getLong(1) : 0L, arr);
+        return result == null ? 0L : result;
     }
 
 }
