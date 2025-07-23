@@ -101,13 +101,35 @@ public class QueryChainUtil<T> {
     private <R> QueryChainUtil<T> getQueryChain(JdbcHelperFunction<T, R> getter,
                                                 String opWithPlaceholder,
                                                 Object... args) {
-        String key = getter.toString();
-        String col = LAMBDA_COLUMN_CACHE
-                .computeIfAbsent(key, k -> ColumnLambdaResolver.resolverColumn(getter, entityClass));
-
+        String col = getCol(getter);
         whereClauses.add("(" + col + opWithPlaceholder + "? )");
         Collections.addAll(params, args);
         return this;
+    }
+
+    public <R> QueryChainUtil<T> in(JdbcHelperFunction<T, R> getter, Object... values) {
+        if (values == null || values.length == 0) {
+            // 空集合时不添加条件
+            return this;
+        }
+        String col = getCol(getter);
+        String placeholders = String.join(", ", Collections.nCopies(values.length, "?"));
+        whereClauses.add("(" + col + " IN (" + placeholders + "))");
+        Collections.addAll(params, values);
+        return this;
+    }
+
+    public <R> QueryChainUtil<T> like(JdbcHelperFunction<T, R> getter, Object value) {
+        String col = getCol(getter);
+        whereClauses.add("(" + col + " LIKE ? )");
+        params.add(value);
+        return this;
+    }
+
+    private <R> String getCol(JdbcHelperFunction<T, R> getter) {
+        String key = getter.toString();
+        return LAMBDA_COLUMN_CACHE
+                .computeIfAbsent(key, k -> ColumnLambdaResolver.resolverColumn(getter, entityClass));
     }
 
     /** 内连接 */
